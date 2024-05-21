@@ -1,34 +1,49 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [name, setName] = useState('');
+  const navigate = useNavigate();
+
+  const createRoom = () => {
+    const roomId = Math.floor(Math.random() * 100000000);
+    const socket = io("http://localhost:3000", {
+      query: {
+        roomId,
+      }
+    })
+
+    socket.on("connect", () => {
+      const roomAndUserData = {
+        roomId,
+        userId: socket.id,
+        userName: name,
+      }
+
+      if (localStorage.getItem('lobbies')) {
+        const lobbies = JSON.parse(localStorage.getItem('lobbies') as string);
+        localStorage.setItem('lobbies', JSON.stringify({ ...lobbies, [roomId]: roomAndUserData }))
+      } else {
+        localStorage.setItem('lobbies', JSON.stringify({ [roomId]: roomAndUserData }));
+      }
+      navigate(`/room/${roomId}`)
+    })
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div>
+      <h1 className='font-bold mb-4'>Welcome to codenames online</h1>
+      <input
+        type="text"
+        placeholder='Enter your name'
+        className='p-2 me-3 text-xl rounded'
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
+      <button onClick={createRoom}>Create room</button>
+    </div>
   )
 }
 
