@@ -1,33 +1,61 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import { useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
+import { Socket, io } from 'socket.io-client';
+import Cookies from 'js-cookie';
 
 function App() {
   const [name, setName] = useState('');
   const navigate = useNavigate();
 
+  //Only keep active rooms from the backend inside client localstorage.
+  useEffect(() => {
+    async function getCurrentRoom() {
+      const res = await fetch('http://localhost:3000/rooms');
+      const { rooms } = await res.json();
+      const currentStoredRoom = localStorage.getItem('room');
+      if (currentStoredRoom && rooms.indexOf(JSON.parse(currentStoredRoom).roomId) < 0) {
+        localStorage.removeItem('room')
+      }
+    }
+    getCurrentRoom()
+  }, [])
+
+  useEffect(() => {
+    const storedSocketId = Cookies.get('socketId');
+    const room = JSON.parse(localStorage.getItem('room') as string);
+
+    if (storedSocketId && room) {
+      io("http://localhost:3000", {
+        query: {
+          roomId: room.roomId,
+          socketId: storedSocketId
+        }
+      })
+      navigate(`/room/${room.roomId}`)
+    } else {
+      Cookies.remove('socketId');
+      localStorage.removeItem('room');
+    }
+  }, [])
+
   const createRoom = () => {
-    const roomId = Math.floor(Math.random() * 100000000);
-    const socket = io("http://localhost:3000", {
+    const roomId = Math.floor(Math.random() * 100000000);  //Creating a random roomID
+    let socket = io("http://localhost:3000", {
       query: {
         roomId,
+        name,
       }
     })
 
-    socket.on("connect", () => {
+    socket?.on("connect", () => {
+      Cookies.set('socketId', socket.id as string, { expires: 1 })
       const roomAndUserData = {
         roomId,
         userId: socket.id,
         userName: name,
       }
-
-      if (localStorage.getItem('lobbies')) {
-        const lobbies = JSON.parse(localStorage.getItem('lobbies') as string);
-        localStorage.setItem('lobbies', JSON.stringify({ ...lobbies, [roomId]: roomAndUserData }))
-      } else {
-        localStorage.setItem('lobbies', JSON.stringify({ [roomId]: roomAndUserData }));
-      }
+      localStorage.setItem('room', JSON.stringify(roomAndUserData))
       navigate(`/room/${roomId}`)
     })
   }
