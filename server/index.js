@@ -1,50 +1,74 @@
+//imports
 const express = require('express');
 const { createServer } = require("http");
-const { Server } = require("socket.io");
+const socketIo = require("socket.io");
 const cors = require('cors');
-const { log } = require('console');
+
+//config
 const app = express();
-
 app.use(cors())
-const rooms = [];
-
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+const io = socketIo(httpServer, {
     cors: {
         origin: "http://localhost:5173"
     }
 });
 
-io.use((socket, next) => {
-    const { socketId } = socket.handshake.query;
-    if (socketId) {
-        socket.id = socketId;
+
+//Rooms DB
+const rooms = {};
+
+
+const updateRoom = (userId, roomId) => {
+    const doesPlayerExist = rooms[roomId]?.players?.find(playerId => playerId === userId);
+    if (!doesPlayerExist) {
+        rooms[roomId] = {
+            players: rooms[roomId]?.players ? [...rooms[roomId].players, userId] : [userId],
+            roomId,
+            totalPlayers: rooms[roomId]?.totalPlayers ? rooms[roomId].totalPlayers + 1 : 1,
+        }
     }
+    console.log(rooms)
+}
+
+
+app.get('/roomInfo/:roomId', (req, res) => {
+    // console.log("Hello");
+    // console.log(req.params)
+    const { roomId } = req.params;
+    const roomInfo = rooms[roomId];
+    console.log(rooms);
+    if (roomInfo) {
+        res.send({ status: "success", data: roomInfo })
+    } else {
+        res.send({ status: "failed", data: "Room not found" })
+    }
+})
+
+io.use((socket, next) => {
+    const { userId } = socket.handshake.query;
+    if (!userId) {
+        return next(new Error(`Invalid user ID => ${userId}`));
+    }
+    socket.id = userId;
     next();
 })
 
 io.on('connection', (socket) => {
-    const { handshake: { query: { roomId } } } = socket;
-    if (rooms.indexOf(roomId) < 0) rooms.push(socket.handshake.query.roomId);
-    socket.join(socket.handshake.query.roomId);
-    console.log(`⚡: ${socket.handshake.query.name} just joined ${socket.handshake.query.roomId}!`);
-    socket.to(roomId).emit("hello")
-    socket.on('dummy', () => {
-        console.log("Checking broadcast");
-    })
-    socket.on('disconnect', () => {
-        console.log(`${socket.handshake.query.name} disconnected!`);
+    console.log('A user connected:', socket.id);
+    const { roomId, userId } = socket.handshake.query;
+    socket.join(roomId);
+    updateRoom(userId, roomId);
+    socket.on('message', (msg) => {
+        console.log('Message received:', msg);
+        socket.emit('message', 'Hello from server');
     });
 
-
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
 });
 
-
-app.get('/rooms', (req, res) => {
-    res.json({
-        rooms
-    })
-})
 
 httpServer.listen(3000, () => {
     console.log(`Server listening on 3000`);

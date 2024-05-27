@@ -1,100 +1,61 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import Cookies from 'js-cookie';
-import { Socket, io } from 'socket.io-client';
+import { useEffect, useState } from "react"
+import { useSocket } from "../context/SocketContext"
+import { useNavigate, useParams } from "react-router-dom";
+import { createRandomEntity } from "../utils";
+
+const getRoomInfo = async (roomId: string) => {
+    const response = await fetch(`http://localhost:3000/roomInfo/${roomId}`)
+    return await response.json();
+}
 
 const Room = () => {
-    const [roomsLoading, setRoomsLoading] = useState(false);
-    const [availableRooms, setAvailableRooms] = useState<string[]>([]);
+    const { connect } = useSocket();
     const { roomId } = useParams();
-    const [name, setName] = useState('');
-    const [socket, setSocket] = useState<Socket | null>(null);
-
-    const joinRoom = (optionalRoomId?: string, optionalName?: string) => {
-        const newSocket = io("http://localhost:3000", {
-            query: {
-                roomId: optionalRoomId ?? roomId,
-                name: optionalName ?? name,
-            }
-        })
-        newSocket?.on("connect", () => {
-            Cookies.set('socketId', newSocket.id as string, { expires: 1 })
-            const roomAndUserData = {
-                roomId: optionalRoomId ?? roomId,
-                userId: newSocket.id,
-                userName: optionalName ?? name,
-            }
-            localStorage.setItem('room', JSON.stringify(roomAndUserData))
-            setName('');
-        })
-
-        newSocket.on("hello", () => {
-            console.log("Hmmm go a hello");
-        })
-        setSocket(newSocket);
-    }
-
-    const test = () => {
-        socket?.emit('dummy');
-        console.log(socket)
-    }
-
+    const [isNewMember, setIsNewMember] = useState(false);
+    // const { socket } = useSocket();
     useEffect(() => {
-        const room = localStorage.getItem('room');
-        if (room && Cookies.get('socketId')) {
-            const { roomId, userName } = JSON.parse(room);
-            joinRoom(roomId, userName);
-        }
+        (async () => {
+            const room = await getRoomInfo(roomId as string);
+            const storedRooms = localStorage.getItem('rooms');
+            const parsedRooms = storedRooms && JSON.parse(storedRooms);
+            if (parsedRooms?.[roomId as string]) {
+                const currentRoom = parsedRooms[roomId as string]
+                connect(currentRoom.userId, currentRoom.roomId);
+            } else {
+                setIsNewMember(true);
+            }
+        })()
     }, [])
 
-    useEffect(() => {
-        async function getRooms() {
-            setRoomsLoading(true);
-            const res = await fetch('http://localhost:3000/rooms');
-            const { rooms } = await res.json();
-            setAvailableRooms(rooms);
-            setRoomsLoading(false);
+    const enterRoom = () => {
+        const userId: string = createRandomEntity('user');
+        connect(userId, roomId!);
+        const rooms = localStorage.getItem('rooms');
+        if (rooms) {
+            const parsedRooms = JSON.parse(rooms);
+            parsedRooms[roomId!] = {
+                roomId, userId
+            }
+            localStorage.setItem('rooms', JSON.stringify(parsedRooms))
+        } else {
+            localStorage.setItem('rooms', JSON.stringify({ [roomId!]: { userId, roomId } }))
         }
-        getRooms()
-    }, [])
-
-    if (roomsLoading) {
-        return (<div>Loading rooms...</div>)
+        setIsNewMember(false);
     }
 
-    if (availableRooms.indexOf(roomId as string) < 0) {
+    if (isNewMember) {
         return (
-            <div>
-                <p>Could not find room!</p>
-                <Link to="/">Go back to homepage</Link>
+            <div className="flex flex-col">
+                <input type="text" placeholder="Enter room ID" className="p-3 rounded-md mb-2" />
+                <button onClick={enterRoom}>Join room</button>
             </div>
         )
     }
-
-    const room = localStorage.getItem('room');
-    if (room && JSON.parse(room).roomId == roomId) {
-        return (
-            <div>
-                <p>Room {JSON.parse(room).roomId}</p>
-                <button onClick={test}>Broadcast a message</button>
-            </div>
-        )
-    } else {
-        return (
-            <div>
-                <input
-                    type="text"
-                    placeholder='Enter your name'
-                    className='p-2 me-3 text-xl rounded'
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                />
-                <button onClick={() => joinRoom()}>Join room</button>
-            </div>
-        )
-    }
-
-
+    return (
+        <div>
+            Room
+        </div>
+    )
 }
 
 export default Room
