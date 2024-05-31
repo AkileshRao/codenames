@@ -1,35 +1,38 @@
 import { createRandomEntity } from "../utils";
-import { useSocket } from "../context/SocketContext";
+import { useSocket } from "../state/SocketContext";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-type JoinRoomProps = {
-  type: 'create' | 'join';
-}
-
-const JoinRoom = ({ type }: JoinRoomProps) => {
+const JoinRoom = () => {
+  const [playerName, setPlayerName] = useState('');
   const navigate = useNavigate();
   const { connect } = useSocket();
   const enterRoom = () => {
     const roomId: string = createRandomEntity('room');
-    const userId: string = createRandomEntity('user');
-    connect(userId, roomId);
+    const playerId: string = createRandomEntity('player');
+    const connectionObj = {
+      playerId,
+      roomId,
+      playerName,
+    }
+    connect(connectionObj);
     const rooms = localStorage.getItem('rooms');
     if (rooms) {
       const parsedRooms = JSON.parse(rooms);
       parsedRooms[roomId] = {
-        roomId, userId
+        roomId, playerId
       }
       localStorage.setItem('rooms', JSON.stringify(parsedRooms))
     } else {
-      localStorage.setItem('rooms', JSON.stringify({ [roomId]: { userId, roomId } }))
+      localStorage.setItem('rooms', JSON.stringify({ [roomId]: { playerId, roomId, playerName } }))
     }
     navigate(`/room/${roomId}`)
   }
 
   return (
     <div className="flex flex-col">
-      <input type="text" placeholder="Enter room ID" className="p-3 rounded-md mb-2" />
-      <button onClick={enterRoom}>{type === 'create' ? "Create" : "Join"} room</button>
+      <input type="text" placeholder="Enter player ID" value={playerName} onChange={e => setPlayerName(e.target.value)} className="p-3 rounded-md mb-2" />
+      <button onClick={enterRoom}>Join room</button>
     </div>
   )
 }

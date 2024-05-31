@@ -3,7 +3,7 @@ import JoinRoom from './components/JoinRoom';
 
 function App() {
   return (
-    <JoinRoom type='create' />
+    <JoinRoom />
   )
 }
 

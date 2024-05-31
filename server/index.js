@@ -19,25 +19,36 @@ const io = socketIo(httpServer, {
 const rooms = {};
 
 
-const updateRoom = (userId, roomId) => {
-    const doesPlayerExist = rooms[roomId]?.players?.find(playerId => playerId === userId);
+const joinRoom = ({ playerId, playerName, roomId, team, role }) => {
+    const doesPlayerExist = rooms[roomId]?.players?.find(player => player.playerId === playerId);
     if (!doesPlayerExist) {
         rooms[roomId] = {
-            players: rooms[roomId]?.players ? [...rooms[roomId].players, userId] : [userId],
-            roomId,
+            players: rooms[roomId]?.players ? [...rooms[roomId].players, { playerId, playerName }] : [{ playerId, playerName }],
             totalPlayers: rooms[roomId]?.totalPlayers ? rooms[roomId].totalPlayers + 1 : 1,
+            red: [],
+            blue: []
         }
     }
-    console.log(rooms)
+    console.log(rooms[roomId].players)
+    console.log(rooms);
+}
+
+const joinTeam = (teamRole, room, player) => {
+    teamRole = teamRole.split('-');
+    console.log(rooms[room])
+    if (teamRole[1] === 'sm') {
+        rooms[room][teamRole[0]][teamRole[1]] = player;
+        rooms[room]['hasSM'] = true;
+    } else {
+        rooms[room][teamRole[0]]['ops'] = rooms[room][teamRole[0]]['ops']?.push(player) ?? [player];
+    }
+    console.log(rooms[room]);
 }
 
 
 app.get('/roomInfo/:roomId', (req, res) => {
-    // console.log("Hello");
-    // console.log(req.params)
     const { roomId } = req.params;
     const roomInfo = rooms[roomId];
-    console.log(rooms);
     if (roomInfo) {
         res.send({ status: "success", data: roomInfo })
     } else {
@@ -46,26 +57,33 @@ app.get('/roomInfo/:roomId', (req, res) => {
 })
 
 io.use((socket, next) => {
-    const { userId } = socket.handshake.query;
-    if (!userId) {
-        return next(new Error(`Invalid user ID => ${userId}`));
+    const { playerId } = socket.handshake.query;
+    if (!playerId) {
+        return next(new Error(`Invalid player ID => ${playerId}`));
     }
-    socket.id = userId;
+    socket.id = playerId;
     next();
 })
 
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
-    const { roomId, userId } = socket.handshake.query;
+    console.log('A player connected:', socket.id);
+    const { roomId, playerId, playerName } = socket.handshake.query;
     socket.join(roomId);
-    updateRoom(userId, roomId);
+    joinRoom({ playerId, playerName, roomId, team: null, role: null });
+
+
+    socket.on('join_team', (teamRole, room, playerId) => {
+        joinTeam(teamRole, room, playerId);
+        socket.emit('room_updated', rooms[room]);
+    })
+
     socket.on('message', (msg) => {
         console.log('Message received:', msg);
         socket.emit('message', 'Hello from server');
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log('Player disconnected:', socket.id);
     });
 });
 

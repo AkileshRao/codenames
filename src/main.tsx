@@ -5,7 +5,7 @@ import './index.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import GoBackToHome from './pages/GoBackToHome.tsx';
 import Room from './pages/Room.tsx';
-import { SocketProvider } from './context/SocketContext.tsx';
+import { SocketProvider } from './state/SocketContext.tsx';
 
 const router = createBrowserRouter([
   {

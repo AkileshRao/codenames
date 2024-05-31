@@ -3,7 +3,7 @@ import { Socket, io } from "socket.io-client";
 
 type SocketContextProps = {
     socket: Socket | null;
-    connect: (userId: string, roomId: string) => void;
+    connect: ({ playerId, roomId, playerName }: { playerId: string, roomId: string, playerName: string }) => void;
 }
 
 const SocketContext = createContext<SocketContextProps | undefined>(undefined);
@@ -19,10 +19,14 @@ export const useSocket = (): SocketContextProps => {
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
     const [socket, setSocket] = useState<null | Socket>(null);
 
-    const connect = (userId: string, roomId: string) => {
+    const connect = ({ playerId, roomId, playerName }: {
+        playerId: string,
+        roomId: string,
+        playerName: string
+    }) => {
         if (!socket) {
             const newSocket = io("http://localhost:3000", {
-                query: { roomId, userId }
+                query: { roomId, playerId, playerName, role: null }
             });
             setSocket(newSocket);
         }
