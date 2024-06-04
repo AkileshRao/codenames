@@ -1,20 +1,14 @@
 import { useEffect, useState } from "react"
 import { useSocket } from "../state/SocketContext"
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { createRandomEntity, activeRoom } from "../utils";
 import ActiveRoom from "../components/ActiveRoom";
-
-// const getRoomInfo = async (roomId: string) => {
-//     const response = await fetch(`http://localhost:3000/roomInfo/${roomId}`)
-//     return await response.json();
-// }
 
 const Room = () => {
     const [playerName, setPlayerName] = useState('');
     const { connect } = useSocket();
     const { roomId } = useParams();
     const [isNewMember, setIsNewMember] = useState(false);
-    // const { socket } = useSocket();
 
     useEffect(() => {
         (async () => {

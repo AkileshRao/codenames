@@ -1,3 +1,5 @@
+import { LocalStorageRoom, TeamMembers } from "../types";
+
 export const createRandomEntity = (type: 'room' | 'player') => {
     return `${type}_${Math.floor(Math.random() * 100000000)}`;
 }
@@ -13,7 +15,7 @@ export const activeRoom = (roomId: string) => {
 }
 
 //Gets the room details from the localStorage
-export const getRoomFromLocalStorage = (roomId: string) => {
+export const getRoomFromLocalStorage = (roomId: string): null | LocalStorageRoom => {
     const rooms = localStorage.getItem('rooms');
     if (rooms) {
         const parsedRooms = JSON.parse(rooms);
@@ -22,6 +24,35 @@ export const getRoomFromLocalStorage = (roomId: string) => {
     return null;
 }
 
+export const getLocalStorageRooms = () => {
+    const rooms = localStorage.getItem('rooms');
+    if (rooms) return JSON.parse(rooms);
+    return {};
+}
+
+export const addRoomToLocalStorage = (room: LocalStorageRoom) => {
+    const { roomId } = room;
+    const rooms = getLocalStorageRooms();
+    rooms[roomId] = room;
+    localStorage.setItem('rooms', JSON.stringify(rooms));
+}
+
 // export const setRoomInLocalStorage = () => {
 
 // }
+
+export const haveIJoinedTeam = (roomId: string, red: TeamMembers | undefined, blue: TeamMembers | undefined) => {
+    const room = getRoomFromLocalStorage(roomId);
+    const playerIsInRedOps = red?.ops.find(player => player.playerId === room?.playerId);
+    const playerIsInBlueOps = blue?.ops.find(player => player.playerId === room?.playerId);
+    if (
+        red?.sm === room?.playerId ||
+        blue?.sm === room?.playerId ||
+        playerIsInRedOps ||
+        playerIsInBlueOps
+    ) {
+        return true;
+    } else {
+        return false;
+    }
+}

@@ -11,7 +11,7 @@ export type Player = {
     playerName: string;
 }
 
-export type localstorageRoom = {
+export type LocalStorageRoom = {
     roomId: string;
     playerId: string;
     playerName: string;
@@ -21,13 +21,12 @@ export type dbRoom = {
     [key: string]: {
         players: Player[];
         totalPlayers: number;
-        red: {
-            sm: Player;
-            ops: Player[];
-        };
-        blue: {
-            sm: Player;
-            ops: Player[];
-        }
+        red: TeamMembers;
+        blue: TeamMembers
     }
+}
+
+export type TeamMembers = {
+    sm: Player | null;
+    ops: Player[];
 }

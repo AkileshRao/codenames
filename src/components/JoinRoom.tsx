@@ -1,32 +1,23 @@
-import { createRandomEntity } from "../utils";
+import { addRoomToLocalStorage, createRandomEntity } from "../utils";
 import { useSocket } from "../state/SocketContext";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { LocalStorageRoom } from "../types";
 
 const JoinRoom = () => {
   const [playerName, setPlayerName] = useState('');
   const navigate = useNavigate();
   const { connect } = useSocket();
+
   const enterRoom = () => {
-    const roomId: string = createRandomEntity('room');
-    const playerId: string = createRandomEntity('player');
-    const connectionObj = {
-      playerId,
-      roomId,
+    const room: LocalStorageRoom = {
+      playerId: createRandomEntity('player'),
+      roomId: createRandomEntity('room'),
       playerName,
     }
-    connect(connectionObj);
-    const rooms = localStorage.getItem('rooms');
-    if (rooms) {
-      const parsedRooms = JSON.parse(rooms);
-      parsedRooms[roomId] = {
-        roomId, playerId
-      }
-      localStorage.setItem('rooms', JSON.stringify(parsedRooms))
-    } else {
-      localStorage.setItem('rooms', JSON.stringify({ [roomId]: { playerId, roomId, playerName } }))
-    }
-    navigate(`/room/${roomId}`)
+    connect(room);  // <===== Socket connection
+    addRoomToLocalStorage(room);
+    navigate(`/room/${room.roomId}`);
   }
 
   return (

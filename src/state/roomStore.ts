@@ -1,47 +1,51 @@
 import { create } from "zustand";
 import { Player } from "../types";
 
-type RoomState = {
-    currentRoom: {
-        players: Player[];
-        totalPlayers: number;
-        red: Player[];
-        blue: Player[];
-        hasSM: boolean;
-    } | null;
-    addPlayer: (player: Player) => void;
+type CurrentRoom = {
+    players: Player[];
+    totalPlayers: number;
+    red: {
+        sm: Player | null;
+        ops: Player[];
+    };
+    blue: {
+        sm: Player | null;
+        ops: Player[];
+    };
+    hasSM: boolean;
+} | null;
+
+
+export type RoomState = {
+    currentRoom: CurrentRoom | null;
+    initializeRoom: (room: CurrentRoom) => void;
+    addPlayer: (newPlayers: Player[]) => void;
     incrementTotalPlayers: () => void;
-    joinTeam: () => void;
+    // joinTeam: () => void;
     updateRoomSM: () => void;
 }
 
-const useRoomStore = create((set) => ({
+const useRoomStore = create<RoomState>((set) => ({
     currentRoom: null,
-    addPlayer: (newPlayers: Player[]) => set((state: RoomState) => ({
+    initializeRoom: (room: CurrentRoom) => set((state) => ({ currentRoom: room })),
+    addPlayer: (newPlayers: Player[]) => set((state) => ({
         currentRoom: {
-            ...state.currentRoom,
+            ...state.currentRoom!,
             players: newPlayers,
         }
     })),
     incrementTotalPlayers: () => set((state: RoomState) => ({
         currentRoom: {
-            ...state.currentRoom,
+            ...state.currentRoom!,
             totalPlayers: state.currentRoom?.totalPlayers ? state.currentRoom?.totalPlayers + 1 : 1
         }
     })),
     updateRoomSM: () => set((state: RoomState) => ({
         currentRoom: {
-            ...state.currentRoom,
+            ...state.currentRoom!,
             hasSM: true
         }
     })),
-    // joinTeam: (team) => set((state: RoomState) => {
-    //     // Get the team and then push the player to that team
-    //     // return currentRoom: {
-    //     //     ...state.currentRoom,
-
-    //     // }
-    // })
 }));
 
 export default useRoomStore;
