@@ -1,4 +1,4 @@
-import { LocalStorageRoom, TeamMembers } from "../types";
+import { LocalStorageRoom, TeamType } from "../types";
 
 export const createRandomEntity = (type: 'room' | 'player') => {
     return `${type}_${Math.floor(Math.random() * 100000000)}`;
@@ -41,13 +41,13 @@ export const addRoomToLocalStorage = (room: LocalStorageRoom) => {
 
 // }
 
-export const haveIJoinedTeam = (roomId: string, red: TeamMembers | undefined, blue: TeamMembers | undefined) => {
+export const haveIJoinedTeam = (roomId: string, red: TeamType | undefined, blue: TeamType | undefined) => {
     const room = getRoomFromLocalStorage(roomId);
     const playerIsInRedOps = red?.ops.find(player => player.playerId === room?.playerId);
     const playerIsInBlueOps = blue?.ops.find(player => player.playerId === room?.playerId);
     if (
-        red?.sm === room?.playerId ||
-        blue?.sm === room?.playerId ||
+        red?.sm?.playerId === room?.playerId ||
+        blue?.sm?.playerId === room?.playerId ||
         playerIsInRedOps ||
         playerIsInBlueOps
     ) {
