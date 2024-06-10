@@ -56,12 +56,14 @@ const ActiveRoom = ({ roomId }: { roomId: string }) => {
         if (currentRoom?.[team].sm) teamMembers.push(currentRoom?.[team].sm);
         if (currentRoom?.[team].ops) teamMembers = [...teamMembers, ...currentRoom?.[team].ops];
         return teamMembers;
+    }
 
-        // console.log(currentRoom?.[team]);
-        // const roomMembers = [currentRoom?.[team].sm, ...currentRoom?.[team].ops!]
-        // if (roomMembers.length === 0) return null;
-        // return {roomMembers};
-        // console.log(team, roomMembers);
+    const startGame = () => {
+        if (!currentRoom?.red.sm || !currentRoom.blue.sm) {
+            console.log("Both teams need a spymaster")
+        } else {
+            socket?.emit('start_game', roomId);
+        }
     }
 
     return (
@@ -85,7 +87,10 @@ const ActiveRoom = ({ roomId }: { roomId: string }) => {
                 <Logs />
                 {!playerJoined && <button className='p-2 text-sm rounded-md w-full bg-stone-700' onClick={submitRole}>Ready</button>}
             </div>
-            <div>{playerJoined && <Cards />}</div>
+            <div>
+                {playerJoined && <Cards />}
+                <button className='bg-blue-700 font-bold mt-4 p-2 px-4 rounded' onClick={startGame}>Start game</button>
+            </div>
         </div>
     )
 }

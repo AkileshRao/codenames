@@ -40,10 +40,7 @@ const TeamCard = ({ team, members, score, handleChangeRole, playerJoined }: Team
                     {
                         members && members.map((member, index) => {
                             return (
-                                <>
-                                    <span className='text-xs'>{member.playerName}{member.role === 'sm' ? "(SM)" : ""}</span>
-                                    {index !== members.length - 1 && <span>,</span>}
-                                </>
+                                <span className='text-xs' key={member.playerId}>{member.playerName}{member.role === 'sm' ? "(SM)" : ""}{index !== members.length - 1 && ","}</span>
                             )
                         })
                     }

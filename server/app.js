@@ -3,7 +3,7 @@ const express = require('express');
 const { createServer } = require("http");
 const socketIo = require("socket.io");
 const cors = require('cors');
-const { joinRoom, rooms, getRoom, loadCardPack, joinTeam } = require('./utils/featureUtils');
+const { joinRoom, rooms, logs, getRoom, loadCardPack, joinTeam, addToLogs, startGame } = require('./utils/featureUtils');
 
 //config
 const app = express();
@@ -34,14 +34,14 @@ io.use((socket, next) => {
 
 //Player connects
 io.on('connection', (socket) => {
-    console.log('A player connected', socket.id);
     const { roomId, playerId, playerName } = socket.handshake.query;
+    console.log(`Player ${playerName} connected`);
 
     //Join room
     socket.join(roomId);
     const roomState = joinRoom({ playerId, playerName, roomId });
-    console.log('ROOM_JOINED', roomState)
     socket.emit('room_joined', roomState);
+    socket.emit('update_logs', logs[roomId]);
 
     //Card pack setup
     const cardPack = loadCardPack();
@@ -50,12 +50,18 @@ io.on('connection', (socket) => {
     //Event handler to handle team joining action
     socket.on('join_team', ({ team, role, roomId, playerId, playerName }) => {
         const updatedRoom = joinTeam(team, role, roomId, playerId, playerName);
-        socket.emit('room_updated', updatedRoom);
+        io.to(roomId).emit('room_updated', updatedRoom)
+        io.to(roomId).emit('update_logs', logs[roomId])
+    })
+
+    socket.on('start_game', (roomId) => {
+        const updatedRoom = startGame(roomId);
+        io.to(roomId).emit('room_updated', updatedRoom)
     })
 
     //Player disconnects
     socket.on('disconnect', () => {
-        console.log('Player disconnected:', socket.id);
+        console.log(`Player ${playerName} disconnected`);
     });
 });
 

@@ -1,6 +1,7 @@
 import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useEffect, useState } from "react";
 import { Socket, io } from "socket.io-client";
 import useRoomStore, { RoomState } from "./roomStore";
+import useLogsStore, { LogsState } from "./logsStore";
 
 type SocketContextProps = {
     socket: Socket | null;
@@ -20,7 +21,8 @@ export const useSocket = (): SocketContextProps => {
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
     const [socket, setSocket] = useState<null | Socket>(null);
-    const initializeRoom = useRoomStore((state: RoomState) => state.initializeRoom);
+    const updateRoom = useRoomStore((state: RoomState) => state.updateRoom);
+    const updateLogs = useLogsStore((state: LogsState) => state.updateLogs);
     const initializePack = useRoomStore((state: RoomState) => state.initializePack);
     const currentRoom = useRoomStore((state: RoomState) => state.currentRoom);
     const connect = ({ playerId, roomId, playerName }: {
@@ -39,9 +41,15 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         socket?.on('room_updated', (room) => {
             console.log(room);
+            updateRoom(room);
+        })
+        socket?.on('update_logs', logs => {
+            console.log(logs);
+            updateLogs(logs);
         })
         socket?.on('room_joined', (room) => {
-            initializeRoom(room);
+            console.log("Room joined");
+            updateRoom(room);
         })
         socket?.on('pack_updated', (pack) => {
             initializePack(pack);
