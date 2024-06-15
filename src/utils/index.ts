@@ -45,6 +45,7 @@ export const haveIJoinedTeam = (roomId: string, red: TeamType | undefined, blue:
     const room = getRoomFromLocalStorage(roomId);
     const playerIsInRedOps = red?.ops.find(player => player.playerId === room?.playerId);
     const playerIsInBlueOps = blue?.ops.find(player => player.playerId === room?.playerId);
+    console.log(red, blue);
     if (
         red?.sm?.playerId === room?.playerId ||
         blue?.sm?.playerId === room?.playerId ||

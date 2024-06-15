@@ -42,7 +42,10 @@ export type CurrentRoom = {
     blue: TeamType;
     hasGameStarted: boolean;
     currentTurn: CurrentTurn | null;
-    winner: 'red' | 'blue' | null;
+    winner: {
+        team: 'red' | 'blue';
+        reason: string;
+    } | null
 } | null;
 
 export type CardType = {

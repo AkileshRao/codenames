@@ -23,7 +23,7 @@ const Room = () => {
         const rooms = localStorage.getItem('rooms');
         if (rooms) {
             const parsedRooms = JSON.parse(rooms);
-            parsedRooms[roomId!] = { roomId, playerId }
+            parsedRooms[roomId!] = { roomId, playerId, playerName }
             localStorage.setItem('rooms', JSON.stringify(parsedRooms))
         } else {
             localStorage.setItem('rooms', JSON.stringify({ [roomId!]: { playerId, roomId, playerName } }))

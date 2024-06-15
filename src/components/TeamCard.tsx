@@ -2,7 +2,7 @@ import React, { ChangeEvent, useCallback } from 'react'
 import { Member, TeamCardType } from '../types';
 
 const TeamCard = ({ team, members, score, handleChangeRole, playerJoined }: TeamCardType) => {
-
+    console.log(playerJoined)
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         handleChangeRole(e.target.value)
     }
