@@ -6,6 +6,7 @@ import { getRoomFromLocalStorage, haveIJoinedTeam } from '../utils';
 import useRoomStore, { RoomState } from '../state/roomStore';
 import Cards from './Cards';
 import { LocalStorageRoom, Member } from '../types';
+import React from 'react';
 
 const ActiveRoom = ({ roomId }: { roomId: string }) => {
     const [teamRole, setTeamRole] = useState('');
@@ -53,8 +54,8 @@ const ActiveRoom = ({ roomId }: { roomId: string }) => {
     }
 
     const teamMembers = (team: 'red' | 'blue') => {
-        let teamMembers = [];
-        if (currentRoom?.[team].sm) teamMembers.push(currentRoom?.[team].sm);
+        let teamMembers: Member[] = [];
+        if (currentRoom?.[team].sm) teamMembers.push(currentRoom?.[team].sm!);
         if (currentRoom?.[team].ops) teamMembers = [...teamMembers, ...currentRoom?.[team].ops];
         return teamMembers;
     }
@@ -114,8 +115,7 @@ const ActiveRoom = ({ roomId }: { roomId: string }) => {
         </div>
     }
     return (
-        <div>
-
+        <div className='font-geist dark h-screen w-screen bg-zinc-950 p-4'>
             <p className='text-2xl font-bold text-white mb-2'>{localStorageRoom?.playerName}</p>
             <div className={`flex gap-4 items-start ${currentRoom?.currentTurn?.team === 'red' ? 'bg-red-500' : (currentRoom?.currentTurn?.team === 'blue' ? 'bg-blue-500' : '')}`}>
                 <div className='flex flex-col'>

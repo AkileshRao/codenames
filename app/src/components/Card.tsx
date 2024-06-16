@@ -1,3 +1,4 @@
+import React from 'react';
 import { CardType } from '../types'
 
 const getColor = (color: 'red' | 'blue' | 'black' | 'neutral', isFlipped: boolean, isSM: boolean) => {

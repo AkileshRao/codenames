@@ -3,6 +3,7 @@ import Card from './Card';
 import { useSocket } from '../state/SocketContext';
 import { CardType, CurrentRoom } from '../types';
 import { getRoomFromLocalStorage } from '../utils';
+import React from 'react';
 
 const Cards = ({ currentRoom, isSM, roomId }: { currentRoom: CurrentRoom, isSM: boolean, roomId: string }) => {
     const currentPack = useRoomStore((state: RoomState) => state.currentPack);

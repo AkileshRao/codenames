@@ -1,7 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-import './index.css'
+import '../globals.css'
+import 'unfonts.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import GoBackToHome from './pages/GoBackToHome.tsx';
 import Room from './pages/Room.tsx';
