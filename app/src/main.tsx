@@ -5,8 +5,10 @@ import '../globals.css'
 import 'unfonts.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import GoBackToHome from './pages/GoBackToHome.tsx';
-import Room from './pages/Room.tsx';
+// import Room from './pages/Room.tsx';
 import { SocketProvider } from './state/SocketContext.tsx';
+import JoinRoom from './components/JoinRoom.tsx';
+import ActiveRoom from './components/ActiveRoom.tsx';
 
 const router = createBrowserRouter([
   {
@@ -19,7 +21,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/room/:roomId",
-    element: <Room />
+    element: <ActiveRoom />
   }
 ])
 

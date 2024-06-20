@@ -15,9 +15,9 @@ export const activeRoom = (roomId: string) => {
 }
 
 //Gets the room details from the localStorage
-export const getRoomFromLocalStorage = (roomId: string): null | LocalStorageRoom => {
+export const getRoomFromLocalStorage = (roomId?: string): null | LocalStorageRoom => {
     const rooms = localStorage.getItem('rooms');
-    if (rooms) {
+    if (rooms && roomId) {
         const parsedRooms = JSON.parse(rooms);
         return parsedRooms[roomId];
     }
@@ -41,7 +41,7 @@ export const addRoomToLocalStorage = (room: LocalStorageRoom) => {
 
 // }
 
-export const haveIJoinedTeam = (roomId: string, red: TeamType | undefined, blue: TeamType | undefined) => {
+export const haveIJoinedTeam = (red: TeamType | undefined, blue: TeamType | undefined, roomId?: string) => {
     const room = getRoomFromLocalStorage(roomId);
     const playerIsInRedOps = red?.ops.find(player => player.playerId === room?.playerId);
     const playerIsInBlueOps = blue?.ops.find(player => player.playerId === room?.playerId);

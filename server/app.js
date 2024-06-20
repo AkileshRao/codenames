@@ -64,11 +64,13 @@ io.on('connection', (socket) => {
         const { cardPack, room } = cardFlip(card, roomId, playerName, currentTurn);
         io.to(roomId).emit('pack_updated', cardPack)
         io.to(roomId).emit('room_updated', room)
+        io.to(roomId).emit('update_logs', logs[roomId])
     })
 
     socket.on('give_clue', (sm, updatedTurn) => {
         const updatedRoom = giveClue(roomId, sm, updatedTurn);
         io.to(roomId).emit('room_updated', updatedRoom);
+        io.to(roomId).emit('update_logs', logs[roomId])
     })
 
     socket.on('reset_game', (roomId) => {

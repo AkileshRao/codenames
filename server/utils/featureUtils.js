@@ -17,10 +17,8 @@ const getRoom = (roomId) => {
 const loadCardPack = () => {
     const randomCardPack = Math.floor(Math.random() * 5);
     if (!cardPack?.name) {
-        console.log("IMIN")
         cardPack = JSON.parse(JSON.stringify(CardPacks.find(pack => pack.name == randomCardPack)));
     }
-    console.log("CARDPACK", cardPack)
     return cardPack;
 }
 
@@ -42,8 +40,9 @@ const cardFlip = (card, roomId, playerName, currentTurn) => {
     if (room[currentTurn.team].score === 0) {
         room['currentTurn'] = null;
         room.hasGameStarted = false;
-        room.winner = { team: currentTurn.team, reason: `Team ${team} guessed all the cards!` };
+        room.winner = { team: currentTurn.team, reason: `Team ${currentTurn.team} guessed all the cards!` };
     } else {
+        addToLogs(roomId, `Team ${currentTurn.team}'s ${playerName} guessed ${card.cardName}`)
         if (currentTurn.wordsAllowedToGuess === 1) {
             room['currentTurn'] = {
                 wordsAllowedToGuess: 0,
@@ -58,7 +57,6 @@ const cardFlip = (card, roomId, playerName, currentTurn) => {
             }
         }
     }
-    console.log(room);
     return { cardPack, room };
 }
 
@@ -135,7 +133,8 @@ const startGame = (roomId) => {
 }
 
 const giveClue = (roomId, sm, updatedTurn) => {
-    addToLogs(`${sm} gave clue:${updatedTurn.clue} for ${updatedTurn.wordsAllowedToGuess} words`);
+    addToLogs(roomId, `${sm} gave clue:${updatedTurn.clue} for ${updatedTurn.wordsAllowedToGuess} words`);
+    console.log(logs)
     const room = getRoom(roomId);
     room.currentTurn = { ...updatedTurn };
     return room;

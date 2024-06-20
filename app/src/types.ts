@@ -25,7 +25,6 @@ export type TeamCardType = {
     team: 'red' | 'blue';
     members?: Member[];
     score: number;
-    handleChangeRole: (teamRole: string) => void;
     playerJoined: boolean;
 }
 
