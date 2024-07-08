@@ -2,7 +2,7 @@ import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useEffe
 import { Socket, io } from "socket.io-client";
 import useRoomStore, { RoomState } from "./roomStore";
 import useLogsStore, { LogsState } from "./logsStore";
-
+import React from 'react';
 type SocketContextProps = {
     socket: Socket | null;
     connect: ({ playerId, roomId, playerName }: { playerId: string, roomId: string, playerName: string }) => void;

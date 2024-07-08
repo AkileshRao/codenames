@@ -1,21 +1,18 @@
-import { useCallback, useEffect, useState } from 'react'
-import TeamCard from './TeamCard'
-import { useSocket } from '../state/SocketContext'
-import Logs from './Logs';
-import { activeRoom, getLocalStorageRooms, getRoomFromLocalStorage, haveIJoinedTeam } from '../utils';
-import useRoomStore, { RoomState } from '../state/roomStore';
-import Cards from './Cards';
-import { LocalStorageRoom, Member } from '../types';
-import React from 'react';
-import { Button } from './ui/button'
-import TeamSelector from './TeamSelector';
+import React, { useCallback, useMemo } from 'react';
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
+import { useSocket } from '../state/SocketContext'
+import { Member } from '../types';
+import { activeRoom, haveIJoinedTeam } from '../utils/room';
+import { getLocalStorageRoom } from '../utils/localStorage';
+import useRoomStore, { RoomState } from '../state/roomStore';
+import { Button, Input, Toaster, useToast } from './ui';
+import Logs from './Logs';
+import Cards from './Cards';
+import TeamSelector from './TeamSelector';
 import JoinRoom from './JoinRoom';
 import ScoreBoard from './ScoreBorad';
-import { Input } from './ui/input';
-import { Toaster } from './ui/toaster';
-import { useToast } from './ui/use-toast';
-import { Card, CardContent, CardHeader } from './ui/card';
+import Winner from './Winner';
 
 const ActiveRoom = () => {
     const { toast } = useToast();
@@ -23,62 +20,51 @@ const ActiveRoom = () => {
     const { roomId } = useParams();
     const { socket, setSocket, connect } = useSocket();
     const currentRoom = useRoomStore((state: RoomState) => state.currentRoom);
-    const [playerJoined, setPlayerJoined] = useState(false);
     const [clueMessage, setClueMessage] = useState('');
     const [clueWords, setClueWords] = useState(0);
-    const [localStorageRoom, setLocalStorageRoom] = useState<LocalStorageRoom | null>(null);
     const [isNewMember, setIsNewMember] = useState(false);
 
-    useEffect(() => {
-        if (roomId) {
-            (async () => {
-                const localStorageRoom = activeRoom(roomId)
-                if (localStorageRoom) {
-                    if (!socket) connect(localStorageRoom);
-                    setIsNewMember(false);
-                } else {
-                    setIsNewMember(true)
-                }
-            })()
-        }
-    }, [])
+    const playerJoined = useMemo(() => {
+        return haveIJoinedTeam(currentRoom?.red, currentRoom?.blue, roomId);
+    }, [currentRoom])
 
-    useEffect(() => {
-        setLocalStorageRoom(getRoomFromLocalStorage(roomId));
+    const localStorageRoom = useMemo(() => {
+        return getLocalStorageRoom(roomId)
     }, [isNewMember])
 
+    //If localstorage already has userDetails
+    //use those details to reconnect as the same user, into the same room.
+    //Used primarily to check on reload
+    //Also handles socket disconnection 
     useEffect(() => {
+        if (roomId) {
+            const activeLocalStorageRoom = activeRoom(roomId)
+            if (activeLocalStorageRoom) {
+                if (!socket) connect(activeLocalStorageRoom);
+                setIsNewMember(false);
+            } else {
+                setIsNewMember(true)
+            }
+        }
+
         return () => {
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
             }
         };
-    }, [socket]);
+    }, [])
 
-    useEffect(() => {
-        console.log(currentRoom)
-        const joined = haveIJoinedTeam(currentRoom?.red, currentRoom?.blue, roomId);
-        setPlayerJoined(joined);
-    }, [roomId, currentRoom])
-
-    const handleTeamSelect = (teamRole) => {
+    //Joins a team
+    const handleTeamSelect = (teamRole: string) => {
         const [team, role] = teamRole.split('-');
-        const room = getRoomFromLocalStorage(roomId);
+        const room = getLocalStorageRoom(roomId);
         const messageObj = {
             playerId: room?.playerId,
             playerName: room?.playerName,
             roomId, team, role
         }
         socket?.emit('join_team', messageObj);
-        setPlayerJoined(true);
-    }
-
-    const teamMembers = (team: 'red' | 'blue') => {
-        let teamMembers: Member[] = [];
-        if (currentRoom?.[team].sm) teamMembers.push(currentRoom?.[team].sm!);
-        if (currentRoom?.[team].ops) teamMembers = [...teamMembers, ...currentRoom?.[team].ops];
-        return teamMembers;
     }
 
     const startGame = () => {
@@ -120,43 +106,33 @@ const ActiveRoom = () => {
         }
     }
 
-    const isSM = useCallback(() => {
-        const room = getRoomFromLocalStorage(roomId);
+    const isPlayerASM = useCallback(() => {
+        const room = getLocalStorageRoom(roomId);
         const spymasters = [currentRoom?.blue.sm?.playerId, currentRoom?.red.sm?.playerId];
         return spymasters.indexOf(room?.playerId) >= 0;
     }, [currentRoom])
 
+    //Do not let both SMs give clue in "give clue" phase
     const isSMFromATeam = () => {
         const { team, state } = currentRoom?.currentTurn!;
         const currentTurnSM = currentRoom?.[team as 'red' | 'blue'].sm?.playerId;
         const playerId = localStorageRoom?.playerId!;
-        if (isSM() && state === 'giveClue' && currentTurnSM === playerId) {
+        if (isPlayerASM() && state === 'giveClue' && currentTurnSM === playerId) {
             return true;
         }
         return false;
     }
 
-    const resetGame = () => {
-        socket?.emit('reset_game', roomId);
-    }
-
+    //If game over
     if (currentRoom?.winner) {
-        return <div className='flex items-center justify-center h-screen w-screen bg-zinc-950 font-geist'>
-            <Card>
-                <CardHeader>
-                    <h2 className='font-bold text-3xl'>Team <span className={`${currentRoom.winner.team === 'red' ? 'text-orange-700' : 'text-indigo-700'}`}>{currentRoom.winner.team}</span> won</h2>
-                </CardHeader>
-                <CardContent>
-                    <p className='text-xl opacity-50 mb-4'>{currentRoom.winner.reason}</p>
-                    <Button onClick={resetGame}>Reset game</Button>
-                </CardContent>
-            </Card>
-        </div>
+        const { reason, team } = currentRoom.winner;
+        return <Winner team={team} roomId={roomId!} winningReason={reason} />
     }
 
+    //If user directly goes to a room URL that they're not part of
     if (isNewMember) {
         return (<div className='flex items-center justify-center h-screen w-screen bg-zinc-950 font-geist'>
-            <JoinRoom hasUserJoinedExistingRoom={(val) => { if (val === true) setIsNewMember(false) }} />
+            <JoinRoom hasUserJoinedExistingRoom={(userJoined) => { if (userJoined === true) setIsNewMember(false) }} />
         </div>)
     }
 
@@ -167,31 +143,29 @@ const ActiveRoom = () => {
                     <p className='text-[1vw]'><span className='opacity-50'>Playing as: </span><span className='opacity-100 font-bold'>{localStorageRoom?.playerName}</span></p>
                     <p className='text-[1vw]'><span className='opacity-50'>Room: </span><span className='opacity-100 font-bold'>{roomId?.split('_')[1]}</span></p>
                 </div>
-                <div>
-                    {
-                        <div>
-                            {currentRoom?.hasGameStarted && isSMFromATeam() &&
-                                <div className='my-2 flex'>
-                                    <Input
-                                        className='p-2 rounded me-2'
-                                        placeholder='Give clue'
-                                        onChange={e => setClueMessage(e.target.value)}
-                                    />
-                                    <Input
-                                        type="number"
-                                        className='p-2 rounded me-2'
-                                        placeholder='Words'
-                                        min={1}
-                                        max={9}
-                                        onChange={e => setClueWords(parseInt(e.target.value))}
-                                    />
-                                    <Button onClick={giveClue}>Give clue</Button>
-                                </div>
-                            }
-                            {currentRoom?.hasGameStarted && <p className='text-center text-[1.1vw] opacity-50'>{roomStateMessage()}</p>}
-                        </div>
-                    }
-                </div>
+                {
+                    <div>
+                        {currentRoom?.hasGameStarted && isSMFromATeam() &&
+                            <div className='my-2 flex'>
+                                <Input
+                                    className='p-2 rounded me-2'
+                                    placeholder='Give clue'
+                                    onChange={e => setClueMessage(e.target.value)}
+                                />
+                                <Input
+                                    type="number"
+                                    className='p-2 rounded me-2'
+                                    placeholder='Words'
+                                    min={1}
+                                    max={9}
+                                    onChange={e => setClueWords(parseInt(e.target.value))}
+                                />
+                                <Button onClick={giveClue}>Give clue</Button>
+                            </div>
+                        }
+                        {currentRoom?.hasGameStarted && <p className='text-center text-[1.1vw] opacity-50'>{roomStateMessage()}</p>}
+                    </div>
+                }
                 <div className='flex gap-2'>
                     {(!currentRoom?.hasGameStarted) && <Button onClick={startGame} className='font-bold'>Start game</Button>}
                     <Button variant={'destructive'} onClick={() => navigate('/')}>Exit room</Button>
@@ -206,14 +180,12 @@ const ActiveRoom = () => {
             {
                 playerJoined &&
                 <div className='flex items-center justify-center'>
-                    <div>
-                        <ScoreBoard currentRoom={currentRoom}>
-                            {playerJoined && <Cards currentRoom={currentRoom} roomId={roomId!} isSM={isSM()} />}
-                            <div className='flex flex-col'>
-                                <Logs />
-                            </div>
-                        </ScoreBoard>
-                    </div>
+                    <ScoreBoard currentRoom={currentRoom}>
+                        {playerJoined && <Cards currentRoom={currentRoom} roomId={roomId!} isPlayerASM={isPlayerASM()} />}
+                        <div className='flex flex-col'>
+                            <Logs />
+                        </div>
+                    </ScoreBoard>
                 </div >
             }
             <Toaster />

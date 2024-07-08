@@ -13,16 +13,14 @@ type CardComponentType = {
     card: CardType;
     onCardFlipped: (card: CardType) => void;
     canFlipCard: boolean;
-    isSM: boolean;
+    isPlayerASM: boolean;
 };
-const Card = ({ card, onCardFlipped, canFlipCard, isSM }: CardComponentType) => {
-    const { cardName, color, isFlipped } = card;
-    const handleCardFlip = () => {
-        if (canFlipCard) onCardFlipped(card);
-    }
 
+const Card = ({ card, onCardFlipped, canFlipCard, isPlayerASM }: CardComponentType) => {
+    const { cardName, color, isFlipped } = card;
     return (
-        <div className={`${getColor(color, isFlipped, isSM)} cursor-pointer p-[1vw] w-[8vw] min-w-full rounded flex items-center justify-center`} onClick={handleCardFlip}>
+        <div className={`${getColor(color, isFlipped, isPlayerASM)} cursor-pointer p-[1vw] w-[8vw] min-w-full rounded flex items-center justify-center`}
+            onClick={() => { if (canFlipCard) onCardFlipped(card) }}>
             <p className='text-[0.9vw] text-center text-white font-bold line-clamp-1'>{cardName}</p>
         </div>
     )

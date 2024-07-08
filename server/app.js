@@ -3,7 +3,9 @@ const express = require('express');
 const { createServer } = require("http");
 const socketIo = require("socket.io");
 const cors = require('cors');
-const { joinRoom, rooms, logs, getRoom, loadCardPack, joinTeam, giveClue, addToLogs, startGame, cardFlip, resetRoom } = require('./utils/featureUtils');
+const { rooms, joinRoom, giveClue, startGame, joinTeam, resetRoom, getRoom } = require('./utils/roomUtils');
+const { loadCardPack, cardFlip } = require('./utils/cardPackUtils');
+const { logs } = require('./utils/logsUtils');
 
 //config
 const app = express();
@@ -61,7 +63,8 @@ io.on('connection', (socket) => {
     })
 
     socket.on('card_flip', (card, roomId, playerName, currentTurn) => {
-        const { cardPack, room } = cardFlip(card, roomId, playerName, currentTurn);
+        const currentRoom = getRoom(roomId)
+        const { cardPack, room } = cardFlip(card, currentRoom, roomId, playerName, currentTurn);
         io.to(roomId).emit('pack_updated', cardPack)
         io.to(roomId).emit('room_updated', room)
         io.to(roomId).emit('update_logs', logs[roomId])

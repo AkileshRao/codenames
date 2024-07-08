@@ -1,12 +1,12 @@
 import React from "react";
-import { addRoomToLocalStorage, createRandomEntity, getLocalStorageRooms, getRoomFromLocalStorage } from "../utils";
+import { createRandomEntity } from "../utils/room";
 import { useSocket } from "../state/SocketContext";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { LocalStorageRoom } from "../types";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { useParams } from "react-router-dom";
+import { upsertLocalStorageRoom } from "../utils/localStorage";
+import { Button, Input } from "./ui";
 
 const JoinRoom = ({ hasUserJoinedExistingRoom }: { hasUserJoinedExistingRoom?: (state: boolean) => void }) => {
   const [playerName, setPlayerName] = useState('');
@@ -21,15 +21,13 @@ const JoinRoom = ({ hasUserJoinedExistingRoom }: { hasUserJoinedExistingRoom?: (
       playerName,
     }
     connect(room);  // <===== Socket connection
-    if (roomId) {
-      let rooms = getLocalStorageRooms();
-      rooms[roomId] = { ...room }
-      localStorage.setItem('rooms', JSON.stringify({ ...rooms }))
-      hasUserJoinedExistingRoom?.(true);
-    } else {
-      addRoomToLocalStorage(room);
-    }
+    upsertLocalStorageRoom(room);
     navigate(`/room/${room.roomId}`);
+
+    //When a user is trying to join a specific room, the navigate method won't work 
+    //because the user would already be on the room/roomId route.
+    //To trigger a rerender inside the ActiveRoom component, we use this callback function
+    if (roomId) { hasUserJoinedExistingRoom?.(true) }
   }
 
   return (
@@ -38,9 +36,8 @@ const JoinRoom = ({ hasUserJoinedExistingRoom }: { hasUserJoinedExistingRoom?: (
       <p className="text-2xl font-light opacity-50 text-white mb-10">Enter your player name to get started.</p>
       <Input type="text" className='w-1/2 text-xl h-12 mb-4' placeholder="Player ID" value={playerName} onChange={e => setPlayerName(e.target.value)} />
       <Button className="w-1/2 text-xl font-medium hover:bg-gradient-to-r hover:from-orange-700 hover:to-indigo-700 hover:text-foreground transition duration-200" size={"lg"} onClick={enterRoom}>Join room {roomId ? roomId.split("_")[1] : ''}</Button>
-    </div >
+    </div>
   )
-
 }
 
 export default JoinRoom
